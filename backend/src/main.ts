@@ -7,10 +7,28 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  // Enable CORS (support production Vercel deployments, localhost, and comma-separated origins)
+  const rawFrontendUrls = (process.env.FRONTEND_URL || 'http://localhost:3000')
+    .split(',')
+    .map((url) => url.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  const defaultOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const allowedOrigins = Array.from(new Set([...rawFrontendUrls, ...defaultOrigins]));
+
   app.enableCors({
-    origin: [frontendUrl, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile clients, curl, server-to-server, Render health checks)
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.vercel\.app$/.test(origin);
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS policy blocked access from origin: ${origin}`), false);
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -56,10 +74,10 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
-  logger.log(`🚀 FieldOps Backend running on: http://localhost:${port}`);
-  logger.log(`📖 Swagger API Documentation available on: http://localhost:${port}/api/docs`);
+  logger.log(`🚀 FieldOps Backend running on: http://0.0.0.0:${port}`);
+  logger.log(`📖 Swagger API Documentation available on: http://0.0.0.0:${port}/api/docs`);
 }
 
 bootstrap();
