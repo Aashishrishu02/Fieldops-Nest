@@ -91,8 +91,19 @@ export const CheckInOutWidget: React.FC<CheckInOutWidgetProps> = ({ onStatusChan
     }
   };
 
-  const isCheckedIn = todayStatus?.hasRecord && !todayStatus?.checkOutTime;
-  const isShiftComplete = todayStatus?.hasRecord && todayStatus?.checkOutTime;
+  const activeRecord =
+    todayStatus?.currentSession ||
+    todayStatus?.todayRecords?.find((r: any) => !r.checkOut);
+  const isCheckedIn = !!activeRecord || (!!todayStatus?.isCheckedIn && !todayStatus?.checkOutTime);
+  const completedRecord = todayStatus?.todayRecords?.find((r: any) => !!r.checkOut);
+  const hasRecord =
+    !!todayStatus?.hasRecord ||
+    isCheckedIn ||
+    !!completedRecord ||
+    (todayStatus?.todayRecords && todayStatus.todayRecords.length > 0);
+  const checkInTime = activeRecord?.checkIn || todayStatus?.checkInTime || completedRecord?.checkIn;
+  const checkOutTime = completedRecord?.checkOut || todayStatus?.checkOutTime;
+  const isShiftComplete = !isCheckedIn && (!!checkOutTime || !!completedRecord);
 
   return (
     <Card className="p-4 sm:p-5">
@@ -120,11 +131,11 @@ export const CheckInOutWidget: React.FC<CheckInOutWidgetProps> = ({ onStatusChan
             </div>
 
             <p className="text-xs text-slate-500 mt-0.5">
-              {!todayStatus?.hasRecord
+              {!hasRecord
                 ? 'No active attendance punched for today.'
                 : isCheckedIn
-                ? `Clocked in at ${formatTime(todayStatus.checkInTime)}. Duration active.`
-                : `Completed shift from ${formatTime(todayStatus.checkInTime)} to ${formatTime(todayStatus.checkOutTime)}.`}
+                ? `Clocked in at ${formatTime(checkInTime)}. Duration active.`
+                : `Completed shift from ${formatTime(checkInTime)} to ${formatTime(checkOutTime)}.`}
             </p>
           </div>
         </div>
@@ -149,7 +160,7 @@ export const CheckInOutWidget: React.FC<CheckInOutWidgetProps> = ({ onStatusChan
             </button>
           )}
 
-          {!todayStatus?.hasRecord ? (
+          {!hasRecord ? (
             <Button
               variant="primary"
               size="sm"

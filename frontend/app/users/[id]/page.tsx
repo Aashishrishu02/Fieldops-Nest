@@ -205,9 +205,14 @@ export default function UserDetailPage() {
                 user.attendanceRecords.slice(0, 5).map((a: any) => (
                   <div key={a.id} className="py-2.5 flex items-center justify-between text-xs">
                     <div>
-                      <div className="font-semibold text-slate-900">{formatDate(a.date)}</div>
+                      <div className="font-semibold text-slate-900">
+                        {formatDate(a.checkIn || a.createdAt || a.date)}
+                      </div>
                       <div className="text-[11px] font-mono text-slate-500">
-                        In: {formatTime(a.checkInTime)} {a.checkOutTime && `| Out: ${formatTime(a.checkOutTime)}`}
+                        In: {formatTime(a.checkIn || a.checkInTime)}{' '}
+                        {(a.checkOut || a.checkOutTime)
+                          ? `| Out: ${formatTime(a.checkOut || a.checkOutTime)}`
+                          : '| Out: Active'}
                       </div>
                     </div>
                     <Badge variant={a.status === 'PRESENT' ? 'success' : a.status === 'LATE' ? 'warning' : 'secondary'}>

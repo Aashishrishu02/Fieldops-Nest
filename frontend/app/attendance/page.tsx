@@ -65,19 +65,21 @@ export default function AttendancePage() {
     fetchRecords();
   }, [selectedUser, selectedStatus, startDate, endDate]);
 
-  const calculateDuration = (inTime: string, outTime?: string) => {
+  const calculateDuration = (inTime?: string, outTime?: string) => {
+    if (!inTime) return '—';
     if (!outTime) return 'Active session';
     const diffMs = new Date(outTime).getTime() - new Date(inTime).getTime();
+    if (isNaN(diffMs) || diffMs < 0) return '—';
     const hours = Math.floor(diffMs / (1000 * 60 * 60));
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
   };
 
   // Compute metrics from records
-  const presentCount = records.filter((r) => r.status === 'PRESENT' || !r.checkOutTime).length;
+  const presentCount = records.filter((r) => r.status === 'PRESENT').length;
   const lateCount = records.filter((r) => r.status === 'LATE').length;
-  const checkedOutCount = records.filter((r) => !!r.checkOutTime).length;
-  const activeCount = records.filter((r) => !r.checkOutTime).length;
+  const checkedOutCount = records.filter((r) => !!(r.checkOut || r.checkOutTime)).length;
+  const activeCount = records.filter((r) => !(r.checkOut || r.checkOutTime)).length;
 
   return (
     <DashboardLayout requiredPermission="ATTENDANCE_VIEW">
@@ -249,14 +251,16 @@ export default function AttendancePage() {
 
                       {/* Check In */}
                       <td className="py-3 px-4 font-mono text-slate-700">
-                        <div>{formatTime(r.checkInTime)}</div>
-                        <div className="text-[10px] text-slate-400">{formatDate(r.date)}</div>
+                        <div>{formatTime(r.checkIn || r.checkInTime)}</div>
+                        <div className="text-[10px] text-slate-400">
+                          {formatDate(r.checkIn || r.createdAt || r.date)}
+                        </div>
                       </td>
 
                       {/* Check Out */}
                       <td className="py-3 px-4 font-mono text-slate-700">
-                        {r.checkOutTime ? (
-                          formatTime(r.checkOutTime)
+                        {(r.checkOut || r.checkOutTime) ? (
+                          formatTime(r.checkOut || r.checkOutTime)
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -267,7 +271,10 @@ export default function AttendancePage() {
 
                       {/* Duration */}
                       <td className="py-3 px-4 font-mono text-slate-600">
-                        {calculateDuration(r.checkInTime, r.checkOutTime)}
+                        {calculateDuration(
+                          r.checkIn || r.checkInTime,
+                          r.checkOut || r.checkOutTime
+                        )}
                       </td>
 
                       {/* Status */}
