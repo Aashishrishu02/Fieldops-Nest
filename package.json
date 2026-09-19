@@ -1,0 +1,33 @@
+{
+  "name": "fieldops-nest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FieldOps Management System - Full-stack Field Operations Platform",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend run start:dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "prisma:generate": "npm --prefix backend run prisma:generate",
+    "lint": "(cd backend && npx tsc --noEmit) && (cd frontend && npx tsc --noEmit)",
+    "test": "npm --prefix backend test"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "fieldops",
+    "crm",
+    "field-service",
+    "nestjs",
+    "nextjs",
+    "prisma",
+    "postgresql",
+    "rbac"
+  ],
+  "author": "FieldOps Team",
+  "license": "UNLICENSED"
+}
