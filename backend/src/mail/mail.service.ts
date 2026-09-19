@@ -11,21 +11,18 @@ export class MailService {
   }
 
   private initializeTransporter() {
-    const host = process.env.SMTP_HOST;
-    const port = parseInt(process.env.SMTP_PORT || '587', 10);
-    const user = process.env.SMTP_USER || process.env.SMTP_USERNAME;
+    const host = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+    const port = 2525;
+    const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
 
     if (host && user && pass) {
       try {
-        const secure =
-          process.env.SMTP_SECURE === 'true' ||
-          (process.env.SMTP_SECURE === undefined && port === 465);
-
         this.transporter = nodemailer.createTransport({
           host,
           port,
-          secure,
+          secure: false,
+          requireTLS: true,
           auth: {
             user,
             pass,
@@ -33,16 +30,13 @@ export class MailService {
           connectionTimeout: 10000, // 10s: Fail fast if host is unreachable / firewalled
           greetingTimeout: 10000,   // 10s: Fail fast if greeting response stalls
           socketTimeout: 15000,     // 15s: Fail fast if socket transmission stalls
-          tls: {
-            rejectUnauthorized: process.env.SMTP_IGNORE_TLS === 'true' ? false : true,
-          },
         });
-        this.logger.log(`📧 SMTP Transporter configured for ${host}:${port} (${user}) [secure=${secure}]`);
+        this.logger.log(`📧 SMTP Transporter configured for ${host}:${port} (${user}) [secure=false, requireTLS=true]`);
       } catch (err: any) {
         this.logger.warn(`Failed to initialize SMTP transporter: ${err.message}. Fallback to console logger.`);
       }
     } else {
-      this.logger.log('ℹ️ No complete SMTP configuration provided (requires SMTP_HOST, SMTP_USER, SMTP_PASS/SMTP_PASSWORD). Outgoing emails will be logged to console.');
+      this.logger.log('ℹ️ No complete SMTP configuration provided (requires SMTP_HOST, SMTP_USER, SMTP_PASS). Outgoing emails will be logged to console.');
     }
   }
 
@@ -166,10 +160,15 @@ export class MailService {
     html: string,
     metadata?: Record<string, any>,
   ): Promise<boolean> {
-    const user = process.env.SMTP_USER || process.env.SMTP_USERNAME;
-    const from =
+    const user = process.env.SMTP_USER;
+    const fromName = process.env.SMTP_FROM_NAME || 'FieldOps';
+    let from =
       process.env.SMTP_FROM ||
-      (user && user.includes('@') ? `FieldOps <${user}>` : 'FieldOps <no-reply@fieldops.local>');
+      (user && user.includes('@') ? `${fromName} <${user}>` : `${fromName} <no-reply@fieldops.local>`);
+
+    if (process.env.SMTP_FROM && !process.env.SMTP_FROM.includes('<')) {
+      from = `${fromName} <${process.env.SMTP_FROM.trim()}>`;
+    }
 
     if (this.transporter) {
       try {
