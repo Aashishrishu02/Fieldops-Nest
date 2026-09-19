@@ -19,8 +19,12 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s failsafe timeout
+
     const config: RequestInit = {
       ...options,
+      signal: options.signal || controller.signal,
       headers: {
         ...this.getHeaders(),
         ...(options.headers || {}),
@@ -29,6 +33,7 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
+      clearTimeout(timeoutId);
 
       if (response.status === 401 && typeof window !== 'undefined') {
         // If unauthorized and not already on /login or /reset-password
@@ -39,7 +44,14 @@ class ApiClient {
         }
       }
 
-      const json = await response.json();
+      let json: any = {};
+      try {
+        json = await response.json();
+      } catch {
+        if (!response.ok) {
+          throw new Error(`Server request failed with status ${response.status} (${response.statusText || 'Error'})`);
+        }
+      }
 
       if (!response.ok) {
         const errorMsg = json.message || json.errorDetails || 'Request failed';
@@ -49,6 +61,10 @@ class ApiClient {
       // Handle NestJS TransformInterceptor response format { success, data, ... }
       return (json.data !== undefined ? json.data : json) as T;
     } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out. The server took too long to respond. Please try again.');
+      }
       throw error;
     }
   }

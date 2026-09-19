@@ -275,7 +275,13 @@ export class AuthService {
       },
     });
 
-    await this.mailService.sendPasswordResetToken(user.email, token);
+    try {
+      await this.mailService.sendPasswordResetToken(user.email, token);
+    } catch (err: any) {
+      throw new BadRequestException(
+        `Failed to send password reset email: ${err.message || 'SMTP delivery failed'}. Please try again later.`,
+      );
+    }
 
     return {
       message: 'If an account exists with this email, password reset instructions have been sent.',

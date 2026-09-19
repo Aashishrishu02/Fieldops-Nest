@@ -169,7 +169,15 @@ export class UsersService {
     });
 
     // Dispatch invitation email with temporary password
-    await this.mailService.sendUserInvitation(email, temporaryPassword, role.name);
+    try {
+      await this.mailService.sendUserInvitation(email, temporaryPassword, role.name);
+    } catch (error: any) {
+      // Clean up newly created user record so the database is not left in an inconsistent state
+      await this.prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+      throw new BadRequestException(
+        `Failed to send invitation email: ${error.message || 'SMTP delivery failed'}. The user account was not created. Please check your SMTP settings.`,
+      );
+    }
 
     return {
       user: {

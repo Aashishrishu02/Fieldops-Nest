@@ -12,13 +12,15 @@ export class MailService {
 
   private initializeTransporter() {
     const host = process.env.SMTP_HOST;
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASSWORD;
+    const port = parseInt(process.env.SMTP_PORT || '587', 10);
+    const user = process.env.SMTP_USER || process.env.SMTP_USERNAME;
+    const pass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
 
     if (host && user && pass) {
       try {
-        const port = parseInt(process.env.SMTP_PORT || '465', 10);
-        const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+        const secure =
+          process.env.SMTP_SECURE === 'true' ||
+          (process.env.SMTP_SECURE === undefined && port === 465);
 
         this.transporter = nodemailer.createTransport({
           host,
@@ -28,13 +30,19 @@ export class MailService {
             user,
             pass,
           },
+          connectionTimeout: 10000, // 10s: Fail fast if host is unreachable / firewalled
+          greetingTimeout: 10000,   // 10s: Fail fast if greeting response stalls
+          socketTimeout: 15000,     // 15s: Fail fast if socket transmission stalls
+          tls: {
+            rejectUnauthorized: process.env.SMTP_IGNORE_TLS === 'true' ? false : true,
+          },
         });
-        this.logger.log(`📧 SMTP Transporter configured for ${host}:${port} (${user})`);
+        this.logger.log(`📧 SMTP Transporter configured for ${host}:${port} (${user}) [secure=${secure}]`);
       } catch (err: any) {
         this.logger.warn(`Failed to initialize SMTP transporter: ${err.message}. Fallback to console logger.`);
       }
     } else {
-      this.logger.log('ℹ️ No SMTP configuration provided. All outgoing emails will be logged to console.');
+      this.logger.log('ℹ️ No complete SMTP configuration provided (requires SMTP_HOST, SMTP_USER, SMTP_PASS/SMTP_PASSWORD). Outgoing emails will be logged to console.');
     }
   }
 
@@ -73,12 +81,17 @@ export class MailService {
       </div>
     `;
 
-    return this.sendMail(recipientEmail, subject, htmlContent, {
-      type: 'SYSTEM_GENERATED_CREDENTIALS',
-      generatedEmail,
-      plainPassword,
-      roleName,
-    });
+    try {
+      return await this.sendMail(recipientEmail, subject, htmlContent, {
+        type: 'SYSTEM_GENERATED_CREDENTIALS',
+        generatedEmail,
+        plainPassword,
+        roleName,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Optional credentials copy email could not be sent to ${recipientEmail}: ${err.message}`);
+      return false;
+    }
   }
 
   async sendUserInvitation(
@@ -153,31 +166,40 @@ export class MailService {
     html: string,
     metadata?: Record<string, any>,
   ): Promise<boolean> {
-    const from = process.env.SMTP_FROM || 'FieldOps <no-reply@fieldops.local>';
+    const user = process.env.SMTP_USER || process.env.SMTP_USERNAME;
+    const from =
+      process.env.SMTP_FROM ||
+      (user && user.includes('@') ? `FieldOps <${user}>` : 'FieldOps <no-reply@fieldops.local>');
 
     if (this.transporter) {
       try {
-        await this.transporter.sendMail({
-          from,
-          to,
-          subject,
-          html,
-        });
+        await Promise.race([
+          this.transporter.sendMail({
+            from,
+            to,
+            subject,
+            html,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('SMTP dispatch timed out after 15 seconds')), 15000),
+          ),
+        ]);
         this.logger.log(`✅ Email dispatched successfully to: ${to} (Subject: ${subject})`);
         return true;
       } catch (error: any) {
         this.logger.error(`❌ Failed to dispatch email via SMTP to ${to}: ${error.message}`);
+        throw new Error(`Email delivery failed: ${error.message}`);
       }
     }
 
-    // Always log clean preview in console for local verification
-    this.logger.log('==================== OUTGOING EMAIL ====================');
+    // Console logger fallback when no SMTP is configured (e.g. local dev)
+    this.logger.log('==================== OUTGOING EMAIL (CONSOLE FALLBACK) ====================');
     this.logger.log(`To:      ${to}`);
     this.logger.log(`Subject: ${subject}`);
     if (metadata) {
       this.logger.log(`Details: ${JSON.stringify(metadata, null, 2)}`);
     }
-    this.logger.log('========================================================');
+    this.logger.log('===========================================================================');
     return true;
   }
 }
