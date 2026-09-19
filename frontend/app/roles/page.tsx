@@ -143,7 +143,6 @@ export default function RolesPage() {
               <thead>
                 <tr className="border-b border-[#E7E7E3] bg-[#FAFAF8] text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Description</th>
                   <th className="py-3 px-4">Users Assigned</th>
                   <th className="py-3 px-4">Permissions</th>
                   <th className="py-3 px-4">Updated</th>
@@ -153,14 +152,14 @@ export default function RolesPage() {
               <tbody className="divide-y divide-slate-100 text-xs">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <td colSpan={5} className="py-12 text-center text-slate-400">
                       <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                       Loading system roles...
                     </td>
                   </tr>
                 ) : roles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
+                    <td colSpan={5} className="py-12 text-center text-slate-500">
                       No roles defined in the system.
                     </td>
                   </tr>
@@ -183,11 +182,6 @@ export default function RolesPage() {
                             {r.name}
                           </Badge>
                         </div>
-                      </td>
-
-                      {/* Description */}
-                      <td className="py-3 px-4 text-slate-600 max-w-xs truncate">
-                        {r.description || 'System standard role'}
                       </td>
 
                       {/* Users Count */}
