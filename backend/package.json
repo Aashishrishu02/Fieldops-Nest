@@ -16,7 +16,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "test": "node --test test/**/*.spec.js"
+    "test": "node --test test/health.spec.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

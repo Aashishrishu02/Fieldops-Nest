@@ -2,7 +2,7 @@
 
 > A full-stack field operations management platform built with Next.js, NestJS, PostgreSQL and Prisma.
 
-[![FieldOps CI Pipeline](https://github.com/placeholder-owner/fieldops-nest/actions/workflows/ci.yml/badge.svg)](https://github.com/placeholder-owner/fieldops-nest/actions/workflows/ci.yml)
+[![FieldOps CI Pipeline](https://github.com/Aashishrishu02/Fieldops-Nest/actions/workflows/ci.yml/badge.svg)](https://github.com/Aashishrishu02/Fieldops-Nest/actions/workflows/ci.yml)
 [![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-UNLICENSED-blue.svg)](LICENSE)
 
@@ -328,7 +328,7 @@ FieldOps uses **PostgreSQL** paired with **Prisma ORM**. The data model consists
 
 ### 1. Clone the Repository
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone https://github.com/Aashishrishu02/Fieldops-Nest.git
 cd fieldops-nest
 ```
 
