@@ -125,7 +125,7 @@ export default function EditUserPage() {
             >
               {roles.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name} — {r.description || 'Role'}
+                  {r.name}
                 </option>
               ))}
             </Select>

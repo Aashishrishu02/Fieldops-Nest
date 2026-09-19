@@ -249,7 +249,7 @@ export default function CreateUserPage() {
                 >
                   {roles.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.name} — {r.description || 'Standard Role'}
+                      {r.name}
                     </option>
                   ))}
                 </Select>
@@ -357,7 +357,7 @@ export default function CreateUserPage() {
                   >
                     {roles.map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.name} — {r.description || 'Standard Role'}
+                        {r.name}
                       </option>
                     ))}
                   </Select>
